@@ -1,10 +1,18 @@
-export async function deleteFollowUpAction(id: number): Promise<boolean> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is deleting a specific follow-up action.
-    // This would typically involve:
-    // 1. Validating that the follow-up action exists
-    // 2. Deleting the follow-up action from the database
-    // 3. Returning true if successful, false if follow-up action not found
-    
-    return Promise.resolve(false);
-}
+import { db } from '../db';
+import { followUpActionsTable } from '../db/schema';
+import { eq } from 'drizzle-orm';
+
+export const deleteFollowUpAction = async (id: number): Promise<boolean> => {
+  try {
+    // Delete the follow-up action with the specified ID
+    const result = await db.delete(followUpActionsTable)
+      .where(eq(followUpActionsTable.id, id))
+      .execute();
+
+    // Return true if a row was deleted, false if no matching record was found
+    return (result.rowCount ?? 0) > 0;
+  } catch (error) {
+    console.error('Follow-up action deletion failed:', error);
+    throw error;
+  }
+};

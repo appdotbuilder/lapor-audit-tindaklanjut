@@ -1,15 +1,37 @@
+import { db } from '../db';
+import { reportsTable } from '../db/schema';
 import { type GetReportsInput, type Report } from '../schema';
+import { eq, and, type SQL } from 'drizzle-orm';
 
 export async function getReports(input?: GetReportsInput): Promise<Report[]> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching reports from the database with optional filtering.
-    // This would typically involve:
-    // 1. Building a query with optional WHERE clauses based on input filters
-    // 2. Executing the query against the reports table
-    // 3. Returning the filtered list of reports
-    
-    // If no input provided, return all reports
-    // If input provided, filter by report_type, status, and/or uploaded_by
-    
-    return Promise.resolve([]);
+  try {
+    // Build conditions array for filtering
+    const conditions: SQL<unknown>[] = [];
+
+    if (input) {
+      if (input.report_type) {
+        conditions.push(eq(reportsTable.report_type, input.report_type));
+      }
+
+      if (input.status) {
+        conditions.push(eq(reportsTable.status, input.status));
+      }
+
+      if (input.uploaded_by) {
+        conditions.push(eq(reportsTable.uploaded_by, input.uploaded_by));
+      }
+    }
+
+    // Build query with conditional where clause
+    const query = conditions.length > 0
+      ? db.select().from(reportsTable).where(conditions.length === 1 ? conditions[0] : and(...conditions))
+      : db.select().from(reportsTable);
+
+    // Execute query and return results
+    const results = await query.execute();
+    return results;
+  } catch (error) {
+    console.error('Failed to fetch reports:', error);
+    throw error;
+  }
 }

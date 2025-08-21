@@ -1,10 +1,27 @@
+import { db } from '../db';
+import { reportsTable } from '../db/schema';
+import { eq } from 'drizzle-orm';
+
 export async function deleteReport(id: number): Promise<boolean> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is deleting a report and all its related follow-up actions.
-    // This would typically involve:
-    // 1. Validating that the report exists
-    // 2. Deleting the report from the database (cascade delete will handle follow-up actions)
-    // 3. Returning true if successful, false if report not found
-    
-    return Promise.resolve(false);
+  try {
+    // First check if the report exists
+    const existingReport = await db.select()
+      .from(reportsTable)
+      .where(eq(reportsTable.id, id))
+      .execute();
+
+    if (existingReport.length === 0) {
+      return false; // Report not found
+    }
+
+    // Delete the report (cascade delete will handle follow-up actions)
+    const result = await db.delete(reportsTable)
+      .where(eq(reportsTable.id, id))
+      .execute();
+
+    return true; // Successfully deleted
+  } catch (error) {
+    console.error('Report deletion failed:', error);
+    throw error;
+  }
 }

@@ -1,23 +1,38 @@
+import { db } from '../db';
+import { followUpActionsTable, reportsTable } from '../db/schema';
 import { type CreateFollowUpActionInput, type FollowUpAction } from '../schema';
+import { eq } from 'drizzle-orm';
 
 export async function createFollowUpAction(input: CreateFollowUpActionInput): Promise<FollowUpAction> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is creating a new follow-up action for a report.
-    // This would typically involve:
-    // 1. Validating that the report exists
-    // 2. Inserting the follow-up action into the follow_up_actions table
-    // 3. Returning the created follow-up action with generated ID and timestamps
-    
-    return Promise.resolve({
-        id: 0, // Placeholder ID
+  try {
+    // Validate that the report exists
+    const existingReport = await db.select()
+      .from(reportsTable)
+      .where(eq(reportsTable.id, input.report_id))
+      .execute();
+
+    if (existingReport.length === 0) {
+      throw new Error(`Report with ID ${input.report_id} not found`);
+    }
+
+    // Insert follow-up action record
+    const result = await db.insert(followUpActionsTable)
+      .values({
         report_id: input.report_id,
         action_description: input.action_description,
         assigned_to: input.assigned_to,
-        status: 'not_started' as const,
         due_date: input.due_date,
-        completion_date: null,
-        notes: input.notes,
-        created_at: new Date(),
-        updated_at: new Date()
-    } as FollowUpAction);
+        notes: input.notes
+        // status defaults to 'not_started' in schema
+        // completion_date is null by default
+        // created_at and updated_at are set automatically
+      })
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('Follow-up action creation failed:', error);
+    throw error;
+  }
 }
